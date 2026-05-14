@@ -8,20 +8,21 @@
 
 ## 📋 Tabla de Contenidos
 
-1. [Descripción General](#descripción-general)
-2. [Estructura del Proyecto](#estructura-del-proyecto)
-3. [Componentes Principales](#componentes-principales)
-4. [Modelos de Datos](#modelos-de-datos)
-5. [Enumeraciones](#enumeraciones)
-6. [Servicios](#servicios)
-7. [Controladores](#controladores)
-8. [Configuración](#configuración)
-9. [Utilidades](#utilidades)
-10. [Excepciones](#excepciones)
-11. [Repositorios](#repositorios)
-12. [Pruebas](#pruebas)
-13. [Flujos de Operación](#flujos-de-operación)
-14. [Relaciones entre Componentes](#relaciones-entre-componentes)
+1. [🎯 Descripción General](#-descripción-general)
+2. [🏗️ Estructura del Proyecto](#️-estructura-del-proyecto)
+3. [🧩 Componentes Principales](#-componentes-principales)
+4. [📊 Modelos de Datos](#-modelos-de-datos)
+5. [🎲 Enumeraciones](#-enumeraciones)
+6. [💼 Servicios](#-servicios)
+7. [🎮 Controladores](#-controladores)
+8. [⚠️ Excepciones](#️-excepciones)
+9. [🗄️ Repositorios](#️-repositorios)
+10. [⚙️ Configuración](#️-configuración)
+11. [🛠️ Utilidades](#️-utilidades)
+12. [📈 Casos de Uso Principales](#-casos-de-uso-principales)
+13. [🔐 Seguridad](#-seguridad)
+14. [🚀 Cómo Usar Este Proyecto](#-cómo-usar-este-proyecto)
+15. [📚 Conclusión](#-conclusión)
 
 ---
 
@@ -157,6 +158,13 @@ ProyectoFinalBack/
 │   ├── 🛠️ util/                             ← Utilidades y manejo de errores
 │   │   ├── GlobalExceptionHandler.java      • Manejador centralizado de excepciones
 │   │   ├── FuncionesTarjeta.java            • Encriptación y generación de tarjetas
+│   │   ├── event/
+│   │   │   ├── AuditoriaListener.java       • Listener de eventos para auditoría
+│   │   │   ├── ClienteCreadoEvent.java      • Evento de creación de cliente
+│   │   │   ├── EmpleadoCreadoEvent.java     • Evento de creación de empleado
+│   │   │   ├── CreditoEvent.java            • Evento de creación de crédito
+│   │   │   ├── CuentaEvent.java             • Evento de creación de cuenta
+│   │   │   └── TarjetaEvent.java            • Evento de creación de tarjeta
 │   │   └── exception/
 │   │       ├── NoEncontradoException.java   • HTTP 404
 │   │       ├── ReglaNegocioException.java   • HTTP 400
@@ -883,7 +891,7 @@ public TransaccionDTO procesarTransaccion(
       ├─ Si detecta fraude → Excepción
       └─ Si pasa → Continuar
 
-6. AJUSTAR SALDOS
+6. AJUSTE DE SALDOS
    ├─ Restar de origen (RESTA)
    ├─ Sumar a destino (SUMA)
    └─ Cada operación genera auditoría
@@ -1009,6 +1017,81 @@ public class XxxController { }
 
 ---
 
+
+## ⚠️ Excepciones
+
+### **GlobalExceptionHandler**
+
+Manejador centralizado de excepciones con responses estándar:
+
+```json
+{
+    "fecha": "2026-05-05T14:30:45.123",
+    "estado": 400,
+    "error": "Bad Request",
+    "mensaje": "ERROR: Ya existe un cliente con el id: 1"
+}
+```
+
+### Excepciones Personalizadas
+
+| Excepción | HTTP | Uso | Ejemplo |
+|-----------|------|-----|---------|
+| `NoEncontradoException` | 404 NOT FOUND | Recurso no existe | Cliente, producto no encontrado |
+| `ReglaNegocioException` | 400 BAD REQUEST | Validación de negocio | Saldo insuficiente, monto negativo |
+| `FraudeDetectadoException` | 403 FORBIDDEN | Fraude detectado | Transacción bloqueada |
+| `RecursoDuplicadoException` | 409 CONFLICT | Duplicado | Cliente ID ya existe |
+| `Exception` (genérica) | 500 INTERNAL ERROR | Errores no manejados | Bugs, errores de BD |
+
+---
+
+## 🗄️ Repositorios
+
+Todos extienden `JpaRepository<Entity, ID>` y acceso a datos automático.
+
+### **Principales:**
+
+```java
+// ClienteRepositorio
+existsClienteByIdCliente(id) : boolean
+findClienteByIdCliente(id) : Cliente
+existsByNumeroDocumento(doc) : boolean
+findByNumeroDocumento(doc) : Cliente
+
+// CreditoRepositorio
+existsCreditoByIdProducto(id) : boolean
+findCreditosByIdProducto(id) : Credito
+findAllByCliente(cliente) : List<Credito>
+
+// TarjetaRepositorio
+existsByIdProducto(id) : boolean
+findTarjetaByIdProducto(id) : Tarjeta
+existsByNumeroEnmascarado(num) : boolean
+findByNumeroEnmascarado(num) : Tarjeta
+
+// CuentaRepositorio
+existsCuentaByIdProducto(id) : boolean
+findCuentaByIdProducto(id) : Cuenta
+findAllByCliente(cliente) : List<Cuenta>
+
+// TransaccionRepositorio
+findByCliente(cliente) : List<Transaccion>
+countByProductoOrigenAndFechaHoraAfterAndEstadoTransaccion(...) : long
+countByProductoOrigenAndFechaHoraAfter(...) : long
+
+// CatalogoRepositorios
+findByNombre, findById, existsBy*, etc.
+
+// AlertaFraudeRepositorio
+Gestión de alertas de fraude
+
+// EventoAuditoriaRepositorio
+Gestión de eventos de auditoría
+```
+
+---
+
+
 ## ⚙️ Configuración
 
 ### **ModelMapperConfig**
@@ -1093,334 +1176,48 @@ public static String generarVencimiento()
 └─ Validez: 5 años
 ```
 
----
+### **Sistema de Eventos (util/event)** - Auditoría Asíncrona
 
-## ⚠️ Excepciones
+**🚨 SISTEMA CRÍTICO PARA AUDITORÍA**
 
-### **GlobalExceptionHandler**
+El sistema de eventos implementa una **auditoría asíncrona y desacoplada** utilizando Spring's `@TransactionalEventListener` con fase `AFTER_COMMIT`. Esto garantiza que la auditoría se registre **solo después de que la transacción principal se complete exitosamente**, evitando contaminación de la lógica de negocio.
 
-Manejador centralizado de excepciones con responses estándar:
+#### **Arquitectura de Eventos:**
 
-```json
-{
-    "fecha": "2026-05-05T14:30:45.123",
-    "estado": 400,
-    "error": "Bad Request",
-    "mensaje": "ERROR: Ya existe un cliente con el id: 1"
-}
+```
+Servicio (ej: ClienteService.crear())
+    ├─ Realiza operaciones de negocio
+    ├─ Publica evento: ApplicationEventPublisher.publishEvent(new ClienteCreadoEvent(cliente))
+    └─ Confirma transacción
+
+AuditoriaListener (escucha AFTER_COMMIT)
+    ├─ Recibe evento ClienteCreadoEvent
+    ├─ Crea EventoAuditoria con detalles
+    ├─ Guarda en BD con REQUIRES_NEW
+    └─ Auditoría registrada de forma aislada
 ```
 
-### Excepciones Personalizadas
+#### **Eventos Disponibles:**
 
-| Excepción | HTTP | Uso | Ejemplo |
-|-----------|------|-----|---------|
-| `NoEncontradoException` | 404 NOT FOUND | Recurso no existe | Cliente, producto no encontrado |
-| `ReglaNegocioException` | 400 BAD REQUEST | Validación de negocio | Saldo insuficiente, monto negativo |
-| `FraudeDetectadoException` | 403 FORBIDDEN | Fraude detectado | Transacción bloqueada |
-| `RecursoDuplicadoException` | 409 CONFLICT | Duplicado | Cliente ID ya existe |
-| `Exception` (genérica) | 500 INTERNAL ERROR | Errores no manejados | Bugs, errores de BD |
+| Evento | Descripción | Listener Método |
+|--------|-------------|-----------------|
+| `ClienteCreadoEvent` | Creación de cliente | `procesarAuditoriaCliente()` |
+| `EmpleadoCreadoEvent` | Creación de empleado | `procesarAuditoriaEmpleado()` |
+| `CreditoEvent` | Creación de crédito | `procesarAuditoriaCredito()` |
+| `CuentaEvent` | Creación de cuenta | `procesarAuditoriaCuenta()` |
+| `TarjetaEvent` | Creación de tarjeta | `procesarAuditoriaTarjeta()` |
 
----
+#### **Ventajas del Sistema:**
 
-## 🗄️ Repositorios
+✅ **Desacoplamiento**: Servicios no conocen la auditoría  
+✅ **Asincronía**: Auditoría ocurre después del commit  
+✅ **Aislamiento**: Transacción separada (REQUIRES_NEW implícito)  
+✅ **Confiabilidad**: Auditoría garantizada incluso en fallos  
+✅ **Escalabilidad**: Fácil agregar nuevos eventos  
 
-Todos extienden `JpaRepository<Entity, ID>` y acceso a datos automático.
-
-### **Principales:**
-
-```java
-// ClienteRepositorio
-existsClienteByIdCliente(id) : boolean
-findClienteByIdCliente(id) : Cliente
-existsByNumeroDocumento(doc) : boolean
-findByNumeroDocumento(doc) : Cliente
-
-// CreditoRepositorio
-existsCreditoByIdProducto(id) : boolean
-findCreditosByIdProducto(id) : Credito
-findAllByCliente(cliente) : List<Credito>
-
-// TarjetaRepositorio
-existsByIdProducto(id) : boolean
-findTarjetaByIdProducto(id) : Tarjeta
-existsByNumeroEnmascarado(num) : boolean
-findByNumeroEnmascarado(num) : Tarjeta
-
-// CuentaRepositorio
-existsCuentaByIdProducto(id) : boolean
-findCuentaByIdProducto(id) : Cuenta
-findAllByCliente(cliente) : List<Cuenta>
-
-// TransaccionRepositorio
-findByCliente(cliente) : List<Transaccion>
-countByProductoOrigenAndFechaHoraAfterAndEstadoTransaccion(...) : long
-countByProductoOrigenAndFechaHoraAfter(...) : long
-
-// CatalogoRepositorios
-findByNombre, findById, existsBy*, etc.
-
-// AlertaFraudeRepositorio
-Gestión de alertas de fraude
-
-// EventoAuditoriaRepositorio
-Gestión de eventos de auditoría
-```
 
 ---
 
-## 🧪 Pruebas
-
-El proyecto incluye pruebas básicas con Spring Boot Test.
-
-### **ProyectoFinalBackApplicationTests**
-
-- Prueba de carga del contexto de Spring Boot
-- Verifica que la aplicación se inicie correctamente sin errores
-
-**Ejecutar pruebas:**
-```bash
-mvn test
-```
-
-**Nota:** Las pruebas son mínimas; se recomienda expandir con pruebas unitarias e integrales para servicios críticos como FraudeService y TransaccionService.
-
----
-
-## 🔄 Flujos de Operación
-
-### **Flujo 1: Crear Cliente (CON AUDITORÍA)**
-
-```
-CLIENT                  CONTROLLER              SERVICE    REPOSITORY   AUDITORIA   BD
-  │                          │                      │            │          │        │
-  ├─ POST /clientes/crear    │                      │            │          │        │
-  ├──────────────────────────>│                      │            │          │        │
-  │      (ClienteDTO)         │                      │            │          │        │
-  │                           │ crear(DTO)          │            │          │        │
-  │                           ├─────────────────────>│            │          │        │
-  │                           │                      │ Validar    │          │        │
-  │                           │                      │ ID único   │          │        │
-  │                           │                      ├───────────>│          │        │
-  │                           │                      │            │ Existe?  │        │
-  │                           │                      │            ├─────────>│        │
-  │                           │                      │            │ (S/N)    │        │
-  │                           │                      │            │<─────────┤        │
-  │                           │                      │<───────────┤          │        │
-  │                           │                      │ save()     │          │        │
-  │                           │                      ├───────────────────────────────>│
-  │                           │                      │            │          │   Insertar
-  │                           │                      │            │          │        │
-  │                           │                      │ auditar()  │          │        │
-  │                           │                      ├────────────────────────>│       │
-  │                           │                      │            │          │ Guardar evento
-  │                           │                      │            │          ├──────>│
-  │                           │                      │            │          │        │
-  │                          DTO<───────────────────┤            │          │        │
-  │                           │                      │            │          │        │
-  │<─── 201 CREATED ──────────┤                      │            │          │        │
-  │      (ClienteDTO)         │                      │            │          │        │
-```
-
-### **Flujo 2: Procesar Transacción (CON FRAUDE)**
-
-```
-CLIENT                  CONTROLLER              SERVICE            REPOSITORY        BD
-  │                          │                      │                   │             │
-  ├─ POST /transacciones     │                      │                   │             │
-  ├──────────────────────────>│                      │                   │             │
-  │ procesarTransaccion()    │                      │                   │             │
-  │                           │ procesarTransaccion()│                   │             │
-  │                           ├────────────────────>│                   │             │
-  │                           │                      │ 1. Cargar cuentas │             │
-  │                           │                      ├──────────────────>│             │
-  │                           │                      │<──────────────────┤             │
-  │                           │                      │                   │             │
-  │                           │                      │ 2. Crear comprobante
-  │                           │                      │ (Transaccion)      │             │
-  │                           │                      │                   │             │
-  │                           │                      │ 3. Registrar inicio
-  │                           │                      │ TransaccionAuditoria
-  │                           │                      ├──────────────────────────────> │
-  │                           │                      │                   │      BEGIN │
-  │                           │                      │                   │             │
-  │                           │                      │ 4. Validaciones   │             │
-  │                           │                      │    ✓ monto > 0    │             │
-  │                           │                      │    ✓ origen ≠ dest│             │
-  │                           │                      │    ✓ dest existe  │             │
-  │                           │                      │                   │             │
-  │                           │                      │ 5. REVISAR FRAUDE │             │
-  │                           │                      │ FraudeService     │             │
-  │                           │                      ├──────────────────>│             │
-  │                           │                      │ a) Estado benefic. │             │
-  │                           │                      │    OK              │             │
-  │                           │                      │ b) Validar reglas  │             │
-  │                           │                      │    ✓ Monto OK     │             │
-  │                           │                      │    ✓ Frecuencia OK│             │
-  │                           │                      │ → RESULTADO: OK    │             │
-  │                           │                      │<──────────────────┤             │
-  │                           │                      │                   │             │
-  │                           │                      │ 6. Ajustar saldos │             │
-  │                           │                      │ a) Restar origen  │             │
-  │                           │                      ├──────────────────────────────> │
-  │                           │                      │    UPDATE cuenta  │             │
-  │                           │                      │                   │             │
-  │                           │                      │ b) Sumar destino  │             │
-  │                           │                      ├──────────────────────────────> │
-  │                           │                      │    UPDATE cuenta  │             │
-  │                           │                      │                   │             │
-  │                           │                      │ 7. Estado = "aplicada"
-  │                           │                      │                   │             │
-  │                           │                      │ 8. SAVE           │             │
-  │                           │                      ├──────────────────────────────> │
-  │                           │                      │    INSERT transaction
-  │                           │                      │                   │             │
-  │                          DTO<───────────────────┤                   │             │
-  │                           │                      │                   │             │
-  │<─────── 200 OK ───────────┤                      │                   │             │
-  │      (TransaccionDTO)     │                      │                   │             │
-```
-
-### **Flujo 3: Fraude Detectado**
-
-```
-   ┌─────────────────────────────────────────────┐
-   │   FraudeService.revisarTransaccion()        │
-   │                                             │
-   │  Detecta: Monto > Umbral o Múltiples Desti│
-   └────────────┬────────────────────────────────┘
-                │
-                │ FraudeDetectadoException
-                │
-         ┌──────▼──────┐
-         │  BLOQUEAR   │
-         └──────┬──────┘
-                │
-       ┌────────┴─────────┐
-       │                  │
-   ┌───▼────┐      ┌─────▼──────┐
-   │Auditar │      │  Notificar │
-   │evento  │      │  por correo│
-   └───┬────┘      └─────┬──────┘
-       │                 │
-       │          Email: SEGURIDAD BOSQUEBANK 🌲
-       │          Motivo: Monto excesivo
-       │          Monto: $50,000
-       │          Etc...
-       │
-   ┌───▼────────────────────┐
-   │ Re-lanzar excepción    │
-   │ HTTP 403 FORBIDDEN     │
-   └────────────────────────┘
-        │
-        ├─ Cliente recibe error
-        └─ Transacción RECHAZADA
-           Estado = "Rechazada"
-           Saldos SE REVIERTEN ✓
-```
-
----
-
-## 🌐 Relaciones entre Componentes
-
-### **Jerarquía de Dependencias**
-
-```
-                    ┌─────────────────────────────┐
-                    │   CONTROLADORES             │
-                    │  (API REST)                 │
-                    └──────┬──────────────────────┘
-                           │
-            ┌──────────────┼──────────────┐
-            │              │              │
-      ┌─────▼──┐    ┌─────▼──┐    ┌─────▼──┐
-      │CLIENTE │    │EMPLEADO│    │CATALOGO│
-      │SERVICE │    │SERVICE │    │SERVICE │
-      └─────┬──┘    └─────┬──┘    └─────┬──┘
-            │              │              │
-            └──────────────┼──────────────┘
-                           │
-            ┌──────────────┼──────────────┐
-            │              │              │
-      ┌─────▼────┐   ┌─────▼──────┐   ┌─────▼─────┐
-      │AUDITORIA │   │PRODUCTO    │   │FRAUDE     │
-      │SERVICE   │   │FINANCIERO  │   │SERVICE    │
-      └──────────┘   │SERVICE     │   └─────┬─────┘
-                     └─────┬──────┘         │
-                           │                │
-            ┌──────────────┼────────────────┤
-            │              │                │
-      ┌─────▼──────┐  ┌────▼───────┐  ┌────▼──────┐
-      │TRANSACCION │  │NOTIFICACION│  │TRANSACCION│
-      │SERVICE     │  │SERVICE     │  │AUDITORIA  │
-      └─────┬──────┘  └────────────┘  │SERVICE    │
-            │                         └───────────┘
-      ┌─────▼──────────────┐
-      │  REPOSITORIOS      │
-      │  (JPA / Hibernate) │
-      └────────┬───────────┘
-               │
-        ┌──────▼──────┐
-        │  BASE DATOS │
-        │  (PostgreSQL) │
-        └─────────────┘
-```
-
-### **Flujo de Datos: Crear Cliente**
-
-```
-ClienteController
-    ├─ @PostMapping("/crear")
-    ├─ Recibe: ClienteDTO
-    │
-    └─> ClienteService.crear(ClienteDTO)
-         ├─ Validar ID único (ClienteRepositorio.exists)
-         ├─ Mapear DTO a Entity (ModelMapper)
-         ├─ Guardar (ClienteRepositorio.save)
-         │
-         └─> Auditar
-              ├─ ClienteService.auditar()
-              ├─ Crear EventoAuditoria
-              ├─ CatalogoService.encontrarCanalPorId(1)
-              │
-              └─> AuditoriaService.guardarEvento(evento)
-                   └─ EventoAuditoriaRepositorio.save
-                       (Con REQUIRES_NEW transaction)
-         
-         └─> Retornar ClienteDTO mapeado
-                (Entity mapeado a DTO)
-    
-    └─> ResponseEntity<ClienteDTO> 201 CREATED
-```
-
-### **Interacciones Principales:**
-
-```
-TransaccionController
-    │
-    └─> TransaccionService.procesarTransaccion()
-         │
-         ├─> ProductoFinancieroService.obtenerCuenta() [2x]
-         │
-         ├─> TransaccionAuditoriaService.registrarTransaccionInicio()
-         │
-         ├─> FraudeService.revisarTransaccion()
-         │    │
-         │    ├─> ReglaFraudeRepositorio (obtener reglas)
-         │    │
-         │    ├─> TransaccionService.frecuencia()
-         │    │
-         │    ├─> NotificacionService.enviarNotificacionBloqueo()
-         │    │
-         │    └─> AuditoriaService.guardarEvento()
-         │
-         ├─> ProductoFinancieroService.ajustarSaldo() [2x]
-         │    │
-         │    └─> AuditoriaService.guardarEvento()
-         │
-         └─> TransaccionRepositorio.save()
-```
-
----
 
 ## 📈 Casos de Uso Principales
 
@@ -1505,6 +1302,7 @@ TransaccionController
 
 ---
 
+
 ## 🔐 Seguridad
 
 ### **Encriptación de Tarjetas**
@@ -1544,87 +1342,6 @@ Cada operación registra:
 
 ---
 
-## 📝 Diagrama E-R Simplificado
-
-```
-┌─────────────┐                    ┌──────────────┐
-│  CLIENTE    │                    │  EMPLEADO    │
-├─────────────┤                    ├──────────────┤
-│ id          │◄───────────┐       │ id           │
-│ documento   │            └───────────┼─ 1:M       │
-│ nombre      │                    │ nombre       │
-│ email       │                    │ cargo        │
-│ estado      │                    │ estado       │
-└─────────────┘                    └──────────────┘
-       │                                  │
-       ├─ 1:M ◄──────────────────────────┼─────────────┐
-       │                                  │              │
-       ▼                                  ▼              │
-┌──────────────────────┐        ┌────────────────────┐  │
-│ EVENTO_AUDITORIA     │        │ PRODUCTO_FINANCIERO│  │
-├──────────────────────┤        ├────────────────────┤  │
-│ id                   │        │ id                 │  │
-│ cliente_id(FK)       │        │ cliente_id(FK)◄────┼──┘
-│ empleado_id(FK)      │        │ numero_producto    │
-│ producto_id(FK)      │        │ tipo (Polimórfico) │
-│ transaccion_id(FK)   │        │ estado_id(FK)      │
-│ accion               │        │ fecha_creacion     │
-│ motivo               │        └────────────────────┘
-│ fecha_hora           │                 │
-└──────────────────────┘        ┌────────┴──────┬───────────┐
-                                │               │           │
-                                ▼               ▼           ▼
-                        ┌──────────────┐ ┌──────────┐ ┌─────────┐
-                        │   CREDITO    │ │ TARJETA  │ │ CUENTA  │
-                        ├──────────────┤ ├──────────┤ ├─────────┤
-                        │ monto_aprob  │ │ numero   │ │ tipo    │
-                        │ saldo_pend   │ │ vencim   │ │ moneda  │
-                        │ tasa_interes │ │ cupo     │ │ saldo   │
-                        └──────────────┘ └──────────┘ └─────────┘
-
-
-┌─────────────────────┐         ┌──────────────────┐
-│  TRANSACCION        │         │  CANAL           │
-├─────────────────────┤         ├──────────────────┤
-│ id                  │         │ id               │
-│ cliente_id(FK)      │         │ nombre           │
-│ producto_origen(FK) │         │ descripcion      │
-│ producto_destino(FK)│         └──────────────────┘
-│ canal_id(FK)        │
-│ monto               │         ┌──────────────────┐
-│ fecha_hora          │         │ ESTADO_TRANSACCION
-│ estado_id(FK)       │         ├──────────────────┤
-│ motivo              │         │ id               │
-└─────────────────────┘         │ nombre           │
-                                └──────────────────┘
-
-┌───────────────────┐
-│  REGLA_FRAUDE     │
-├───────────────────┤
-│ id(PK)            │
-│ nombre            │
-│ tipo_regla        │
-│ umbral            │
-│ max_intentos      │
-│ ventana_minutos   │
-│ activa            │
-└───────────────────┘
-
-
-┌─────────────────┐        ┌────────────────┐
-│ ALERTA_FRAUDE   │        │ ALERTA_TRANSAC │
-├─────────────────┤        ├────────────────┤
-│ id              │        │ id             │
-│ regla_id(FK)    │        │ transaccion_id │
-│ tipo_alerta     │        │ fecha_asoc     │
-│ severidad       │        └────────────────┘
-│ descripcion     │
-│ fecha_hora      │
-│ estado_alerta   │
-└─────────────────┘
-```
-
----
 
 ## 🚀 Cómo Usar Este Proyecto
 
@@ -1682,6 +1399,8 @@ POST /transacciones/procesarTransaccion?idCuentaOrigen=1&idCuentaDestino=2&monto
 
 ---
 
+
+
 ## 📚 Conclusión
 
 **ProyectoFinalBack** es una aplicación bancaria **robusta, escalable y segura** que demuestra:
@@ -1695,17 +1414,6 @@ POST /transacciones/procesarTransaccion?idCuentaOrigen=1&idCuentaDestino=2&monto
 ✅ Documentación API automática (Swagger)  
 ✅ Seguridad con encriptación  
 ✅ Code reusabilidad y mantenibilidad  
-
----
-
-## 📞 Soporte
-
-Para preguntas o mejoras, contacte al equipo de desarrollo.
-
-**Documento generado:** 2026-05-14  
-**Versión:** 1.0  
-**Estado:** ✅ Producción
-
 ---
 
 **🌲 BOSQUEBANK - Sistema Bancario Integral 🌲**
