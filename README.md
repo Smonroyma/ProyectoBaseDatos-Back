@@ -93,10 +93,6 @@ Para documentación completa, ver `Documentacion.md`.
 - Michael Sebastián Zabala Ávila - Desarrollador
 - Santiago Monroy Manrique - Desarrollador
 
-### 📄 Licencia
-
-Este proyecto es parte del curso de Bases de Datos 1 - Universidad Unbosque.
-
 ---
 
 **🌲 BOSQUEBANK🌲**
