@@ -115,6 +115,10 @@ public class ClienteService {
             cliente.setEmail(clienteDTO.getEmail());
             cliente.setEstadoCliente(clienteDTO.getEstadoCliente());
 
+            if(cliente.getEstadoCliente() == null){
+                cliente.setEstadoCliente(EstadoActor.activo);
+            }
+
             auditar(cliente, "Se actualizacion los datos de un cliente", "El cliente realizo una actualizacion de datos");
 
             return modelMapper.map(clienteRepositorio.save(cliente), ClienteDTO.class);
