@@ -16,8 +16,6 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
-# No ignores el wrapper de maven si lo usas para compilar en otros lados
-# !.mvn/wrapper/maven-wrapper.jar
 
 ### Java & Compiled ###
 *.class
@@ -41,7 +39,6 @@ buildNumber.properties
 ehthumbs.db
 Thumbs.db
 
-### Contraseñas y Configuración Local ###
 .env
 .env.local
 application-local.properties
