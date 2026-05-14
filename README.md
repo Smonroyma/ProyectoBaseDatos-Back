@@ -89,9 +89,9 @@ Para documentación completa, ver `Documentacion.md`.
 
 ### 👥 Contribuidores
 
-- [Brayan David Herrera Acero] - Desarrollador
-- [Michael Sebastián Zabala Ávila] - Desarrollador
-- [Santiago Monroy Manrique] - Desarrollador
+- Brayan David Herrera Acero - Desarrollador
+- Michael Sebastián Zabala Ávila - Desarrollador
+- Santiago Monroy Manrique - Desarrollador
 
 ### 📄 Licencia
 
